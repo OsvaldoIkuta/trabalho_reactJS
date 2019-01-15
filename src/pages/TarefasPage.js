@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 
 import {Link, Route} from 'react-router-dom'
 
-import { Table } from 'reactstrap';
+import { Table, Button, Input } from 'reactstrap';
+
+import Tarefas_Button_Create from './Tarefa_Create';
+import Tarefas_Button_Edit from './Tarefa_Edit';
 
 {
     /**
@@ -33,25 +36,94 @@ class TarefasPage extends Component {
 		super(props);
 		this.state = {users: []};
 		this.headers = [
-			{ key: 'usuarioId', label: 'Usuário ID' },
 			{ key: 'id', label: 'ID' },
 			{ key: 'titulo', label: 'Titulo' },
-			{ key: 'descricao', label: 'Descrição' }
-		];
+            { key: 'descricao', label: 'Descrição' },
+            { key: 'concluida', label: 'Concluída?'},
+            { key: 'acoes', label: 'Açoes'}
+        ];
+        this.onEditTarefaPage = this.onEditTarefaPage.bind(this);
+        this.onDeleteTarefaPage = this.onDeleteTarefaPage.bind(this);
     }
     
     componentDidMount() {
-		fetch('http://localhost:3001/api/tarefas?titulo=aprender')
-			.then(response => {
-				return response.json();
-			}).then(result => {
-				this.setState({
-					users:result
-				});
-			});
-	}
+		this.requestTarefas();
+    }
+    
+    requestTarefas() {
+        fetch('http://localhost:3001/api/tarefas?titulo=aprender')
+        .then(response => {
+            //console.log(response);
+            return response.json();
+        }).then(result => {
+            //console.log(result);
+            this.setState({
+                users:result
+            });
+        });
+    }
+
+    onCreateTarefaPage = () => {
+        this.props.history.replace('/tarefa_create')
+    }
+
+    onEditTarefaPage = (id) => {
+        this.props.history.replace('/tarefa/edit/'+id)
+    }
+
+    onDeleteTarefaPage = (id) => {
+        var that = this;
+        console.log('http://localhost:3001/api/tarefas/'+id);
+        fetch('http://localhost:3001/api/tarefas/'+id, {
+			method: 'DELETE',
+			headers: {
+			  "x-access-token": localStorage.getItem('id_token')
+			}
+		}).then(function(response) {
+            console.log("ok");
+            that.requestTarefas();
+        }).catch(function(error) {
+            console.log(error);
+        });
+    }
+
+    handleChangeConcluida(e, item) {
+        var that = this;
+        console.log(item);
+        if (e.target.checked == true) {
+          //this.setState({concluida: 1});
+          fetch('http://localhost:3001/api/tarefas/'+item.id+'/concluida', {
+                method: 'PUT'
+            }).then(function(response) {
+                console.log("ok");
+                that.requestTarefas();
+            }).catch(function(error) {
+                console.log(error);
+            });
+          item.concluida = 1
+          console.log(item);
+        } else {
+          //this.setState({concluida: 0});
+          fetch('http://localhost:3001/api/tarefas/'+item.id+'/concluida', {
+                method: 'DELETE'
+            }).then(function(response) {
+                console.log("ok");
+                that.requestTarefas();
+            }).catch(function(error) {
+                console.log(error);
+            });
+          item.concluida = 0
+          console.log(item);
+        }
+      //this.setState({concluida: event.target.value});
+    }
+
+    shouldComponentUpdate(nextProps, nextState){
+        return nextState.users != this.state.users;
+     }
 
     render() {
+        var that = this;
         {/**
             const tarefasLinks = TAREFAS.map((tarefa, index) => { // array de <li>
                 return (<li key={tarefa.id}><Link to={'/tarefas/' + tarefa.id }>{tarefa.titulo}</Link></li>)
@@ -62,8 +134,10 @@ class TarefasPage extends Component {
 
         
         return (
-        
+            
             <div>
+                <Button color="success" onClick={this.onCreateTarefaPage} >Cadastrar Tarefa</Button>
+                <br></br>
                 <Table striped>
                     <thead>
                         <tr>
@@ -81,10 +155,14 @@ class TarefasPage extends Component {
                             this.state.users.map(function(item, key) {             
                             return (
                                     <tr key = {key}>
-                                    <td>{item.usuarioId}</td>
-                                    <td>{item.id}</td>
-                                    <td>{item.titulo}</td>
-                                    <td>{item.descricao}</td>
+                                        <td>{item.id}</td>
+                                        <td>{item.titulo}</td>
+                                        <td>{item.descricao}</td>
+                                        <td><Input type="checkbox" name="finalizada" onChange={((e) => that.handleChangeConcluida(e, item))}  checked={item.concluida == 1 ? 'checked' : ''}  ></Input>{' '}</td>
+                                        <td>
+                                            <Link className="btn btn-warning"  to={'/tarefa/edit/'+item.id} >Editar</Link>
+                                            <Button color="danger"  onClick={() => {if(window.confirm('Delete the item?')) {that.onDeleteTarefaPage(item.id)};}}>Excluir</Button>
+                                        </td>
                                     </tr>
                                 )
                             })

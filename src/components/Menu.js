@@ -12,7 +12,8 @@ import {
         //Route, 
        //BrowserRouter, 
        Link, withRouter } from 'react-router-dom'
-import { setAutenticado, isAutenticado } from '../utils/LoginManager';
+import { isAutenticado, logout } from '../utils/LoginManager';
+
 
 const Menu = (props) => {
     return (
@@ -30,7 +31,7 @@ const Menu = (props) => {
                 {isAutenticado() ? (
                   <NavItem>
                     <NavLink onClick={() => {
-                                setAutenticado(false);
+                                logout();
                                 props.history.push('/');
                     }}
                     >
